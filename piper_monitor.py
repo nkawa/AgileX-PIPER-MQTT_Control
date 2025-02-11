@@ -24,7 +24,8 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__),'.env'))
 
 
-MQTT_SERVER = os.getenv("MQTT_SERVER", "127.0.0.1")
+#MQTT_SERVER = os.getenv("MQTT_SERVER", "127.0.0.1")
+MQTT_SERVER = os.getenv("MQTT_SERVER", "192.168.207.22")
 MQTT_ROBOT_STATE_TOPIC= os.getenv("MQTT_ROBOT_STATE_TOPIC", "piper/real")
 
 
@@ -81,7 +82,7 @@ class PiPER_MON:
             if last == 0:
                 last = now
 
-            if now-last > 0.3: #0.3秒に１回程度で送る
+            if now-last > 0.1: #0.1秒に１回程度で送る パラメータで修正できても。。 グリップ中は重要
 
                 gaj = self.piper.GetArmJointMsgs() # 各ジョイントと取得時刻がわかる
                 aj = gaj.joint_state
@@ -90,7 +91,7 @@ class PiPER_MON:
                 gj = gag.gripper_state
         #        print(armJoint) # これで角度が出せる
                 self.joints = [aj.joint_1, aj.joint_2, aj.joint_3, aj.joint_4, aj.joint_5, aj.joint_6, gj.grippers_angle]
-                self.pose[8] = gj.grippers_effort #トルクの共有
+                self.pose[7] = gj.grippers_effort #トルクの共有
                 myjt = {
                     "ctime": gaj.time_stamp,           
                     "joints": self.joints,

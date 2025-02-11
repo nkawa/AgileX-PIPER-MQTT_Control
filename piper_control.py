@@ -55,14 +55,14 @@ class PiPER_CON:
         while self.loop:
 
             # 現在情報を取得しているかを確認
-            if self.pose[0:6].sum() == 0:
+            if self.pose[0:7].sum() == 0:
                 time.sleep(0.3)
                 print("[CNT]Wait for monitoring..")
                 continue
 
-            if self.pose[7:14].sum() == 0:
+            if self.pose[8:15].sum() == 0:
                 time.sleep(0.8)
-                print("[CNT]Wait for target..")
+                print("[CNT]Wait for joints..")
                 continue 
             
             now = time.time()
@@ -72,11 +72,18 @@ class PiPER_CON:
                 continue
             
             self.last = now
-            joint_q = self.pose[7:14].tolist()  #これだと生の値
-            
-            # 各ジョイントへの制御をここで渡す
-            print("[CNT]",joint_q)
+            joint_q = self.pose[8:15].astype(int).tolist()  #これだと生の値
+            current  = self.pose[0:7].astype(int)
+            diff = self.pose[8:15]-self.pose[0:7]
+            diff = diff.astype('int')
 
+            # 各ジョイントへの制御をここで渡す
+            print("[CNT]",joint_q,diff)
+            
+#            self.piper.JointCtrl(joint_q[0], joint_q[1], joint_q[2], joint_q[3], joint_q[4], joint_q[5])
+            self.piper.JointCtrl(joint_q[0], current[1], current[2], current[3], current[4], current[5])
+            print(self.piper.GetArmStatus())
+            time.sleep(0.01)
 
 
     def run_proc(self):

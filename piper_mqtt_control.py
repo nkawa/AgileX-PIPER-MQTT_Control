@@ -48,8 +48,6 @@ MQTT_MANAGE_RCV_TOPIC = os.getenv("MQTT_MANAGE_RCV_TOPIC", "dev")+"/"+ROBOT_UUID
 
 """
 
-joints=['j1','j2','j3','j4','j5','j6']
-
 def get_ip_list():
     ll = ipget.ipget()
     flag = False
@@ -75,9 +73,11 @@ class PiPER_MQTT:
 
         # ここで、MyID Register すべき
         my_info = {
-            "robot_model": ROBOT_MODEL,
+            "date" :  str(datetime.today()),
+            "robotModel": ROBOT_MODEL,
+            "codeType": "python-robot",
             "IP": get_ip_list(),
-            "ID":ROBOT_UUID 
+            "devId": ROBOT_UUID 
         }
         self.client.publish(MQTT_MANAGE_TOPIC+"/register", json.dumps(my_info))
         print("Publish",json.dumps(my_info))
@@ -95,27 +95,27 @@ class PiPER_MQTT:
         if msg.topic == MQTT_CTRL_TOPIC:
             js = json.loads(msg.payload)
             try:
-                if js['a']== True:
+                if js['trigger'][1]== True: # A button
                     self.start = 0
                     print("Start controlling!")
                 elif self.start < 0:
-                    print("Waiting...for A button")
+                    print("Waiting...for A button",js)
                     return
 
-                if self.start > 100 and js['a']==True:
+                if self.start > 100 and js['trigger'][1]==True: # stop controll?
                     self.start = -1
                     return
             except KeyError:
-                print("No abutton")
+                print("No a button")
                 print(js)
 
             self.start +=1
 
-            rot =js["rotate"]
-
-            joint_q = [math.radians(x) for x in rot]
+            rot =js["joints"]
+#            print(rot)
+            joint_q = [int(x*1000) for x in rot]
         # このjoint 情報も Shared Memoryに保存すべし！
-            self.pose[7:14] = joint_q 
+            self.pose[8:15] = joint_q 
         # Target 情報を保存するだけ
         else:
             print("not subscribe msg",msg.topic)
@@ -163,12 +163,16 @@ class ProcessManager:
         self.ctrlP = Process(target=self.ctrl.run_proc, args=(),name="PiPER-control")
         self.ctrlP.start()
 
+## 共有メモリ(ar)でプロセス間通信を実施
+##  0～6 までが、実アームのjoint 角度（6はグリッパ）7 はトルク
+##  8～14までが、VRからの制御指令
+
     def checkSM(self):
-        while True:
-            diff = self.ar[7:]-self.ar[:7]
-            diff *=1000
+        while True: ## ここで全体の状況を確認
+            diff = self.ar[8:15]-self.ar[0:7]
+#            diff *=1000
             diff = diff.astype('int')
-            print(self.ar[:7],self.ar[7:14])
+            print(self.ar[:8],self.ar[8:15])
             print(diff)
             time.sleep(2)
     
