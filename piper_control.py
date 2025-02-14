@@ -26,13 +26,52 @@ class PiPER_CON:
         self.last = 0
         self.average = np.ndarray((10,),np.dtype("int16"))
         self.average.fill(0)
+        
+        
+    def enable_fun(self):
+        enable_flag = False
+        timeout = 5
+        start_time = time.time()
+        elapsed_time_flag = False
+        while not(enable_flag):
+            elapsed_time = time.time()-start_time
+            print("----------")
+            enable_flag = ( 
+                self.piper.GetArmLowSpdInfoMsgs().motor_1.foc_status.driver_enable_status and \
+                self.piper.GetArmLowSpdInfoMsgs().motor_2.foc_status.driver_enable_status and \
+                self.piper.GetArmLowSpdInfoMsgs().motor_3.foc_status.driver_enable_status and \
+                self.piper.GetArmLowSpdInfoMsgs().motor_4.foc_status.driver_enable_status and \
+                self.piper.GetArmLowSpdInfoMsgs().motor_5.foc_status.driver_enable_status and \
+                self.piper.GetArmLowSpdInfoMsgs().motor_6.foc_status.driver_enable_status
+            )
+            print("Status of PiPER:",enable_flag)
+                
+            self.piper.EnableArm(7)
+            self.piper.GripperCtrl(0,1000,0x01, 0)
+            print("----------")
+            
+            if elapsed_time > timeout:
+                print("Timeout")
+                elapsed_time_flag = True
+                enable_flag - True
+                break
+            
+            time.sleep(1)
+        
+        if elapsed_time_flag:
+            print("Cannot enable the robot... for seconds ",timeout)
+            exit(0)
+                        
 
     def init_piper(self):
         print("Initializing Piper control")
         #本当はシェアすべき？
-        self.piper = C_PiperInterface()
+        self.piper = C_PiperInterface_V2("can0")
         self.piper.ConnectPort()
-        # 接続チェックしてもいいけどね。
+        self.piper.EnableArm(7)
+        # 接続チェック
+        time.sleep(0.5)
+        self.enable_fun()
 
     def init_realtime(self):
         os_used = sys.platform
@@ -80,10 +119,18 @@ class PiPER_CON:
             # 各ジョイントへの制御をここで渡す
             print("[CNT]",joint_q,diff)
             
+            #アームの運動制御命令２
+            # ctrl_mode: 0x00 待機、 0x01: CAN指令制御, 0x03:イーサネット, 0x04: WiFi, 0x07 オフライン
+            # move_mode; 0x00 MoveP, 0x01: MoveJ, 0x02: MoveL, 0x03: MoveC, 0x04: Move M (Version 1.5-2 以降)
+            # speed_rate:  0~100 の速度のパーセンテージ
+            # residence_time: オフライン軌道点の滞留時間 (秒)
+            # installation_pos: 設置位置 
+            self.piper.MotionCtrl_2(0x01, 0x01, 10, 0x00)
+            # まずは joint0 のみ
 #            self.piper.JointCtrl(joint_q[0], joint_q[1], joint_q[2], joint_q[3], joint_q[4], joint_q[5])
-            self.piper.JointCtrl(joint_q[0], current[1], current[2], current[3], current[4], current[5])
-            print(self.piper.GetArmStatus())
-            time.sleep(0.01)
+            self.piper.JointCtrl(joint_q[0], joint_q[1], joint_q[2], current[3], current[4], current[5])
+            #   print(self.piper.GetArmStatus())
+            time.sleep(0.005)
 
 
     def run_proc(self):

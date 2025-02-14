@@ -32,6 +32,8 @@ ROBOT_MODEL = os.getenv("ROBOT_MODEL","piper")
 MQTT_MANAGE_TOPIC = os.getenv("MQTT_MANAGE_TOPIC", "dev")
 MQTT_MANAGE_RCV_TOPIC = os.getenv("MQTT_MANAGE_RCV_TOPIC", "dev")+"/"+ROBOT_UUID
 
+print("MQTT Server as ",MQTT_SERVER)
+
 #
 #　MQTT ： Joint、もしくは ツール位置を受信する
 #
@@ -108,12 +110,16 @@ class PiPER_MQTT:
             except KeyError:
                 print("No a button")
                 print(js)
+#            print("Trigger ",js['trigger'])
 
             self.start +=1
-
-            rot =js["joints"]
+            if js['trigger'][2]: # B button is on
+                # set Initial pose!
+                joint_q = [13300,2100,0,0,-10,0,0]
+            else:
+                rot =js["joints"]
 #            print(rot)
-            joint_q = [int(x*1000) for x in rot]
+                joint_q = [int(x*1000) for x in rot]
         # このjoint 情報も Shared Memoryに保存すべし！
             self.pose[8:15] = joint_q 
         # Target 情報を保存するだけ
