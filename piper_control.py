@@ -117,7 +117,7 @@ class PiPER_CON:
             diff = diff.astype('int')
 
             # 各ジョイントへの制御をここで渡す
-            print("[CNT]",joint_q,diff)
+#            print("[CNT]",joint_q,diff)
             
             #アームの運動制御命令２
             # ctrl_mode: 0x00 待機、 0x01: CAN指令制御, 0x03:イーサネット, 0x04: WiFi, 0x07 オフライン
@@ -125,10 +125,12 @@ class PiPER_CON:
             # speed_rate:  0~100 の速度のパーセンテージ
             # residence_time: オフライン軌道点の滞留時間 (秒)
             # installation_pos: 設置位置 
-            self.piper.MotionCtrl_2(0x01, 0x01, 10, 0x00)
-            # まずは joint0 のみ
-#            self.piper.JointCtrl(joint_q[0], joint_q[1], joint_q[2], joint_q[3], joint_q[4], joint_q[5])
-            self.piper.JointCtrl(joint_q[0], joint_q[1], joint_q[2], current[3], current[4], current[5])
+            self.piper.MotionCtrl_2(0x01, 0x01, 40, 0x00)
+            self.piper.JointCtrl(joint_q[0], joint_q[1], joint_q[2], joint_q[3], joint_q[4], joint_q[5])
+            
+#            self.piper.GripperCtrl(0,1000,0x01, 0)
+            
+#            self.piper.JointCtrl(joint_q[0], joint_q[1], joint_q[2], current[3], current[4], current[5])
             #   print(self.piper.GetArmStatus())
             time.sleep(0.005)
 
