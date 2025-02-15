@@ -69,6 +69,7 @@ class PiPER_CON:
         self.piper = C_PiperInterface_V2("can0")
         self.piper.ConnectPort()
         self.piper.EnableArm(7)
+        self.gripper = 24000
         # 接続チェック
         time.sleep(0.5)
         self.enable_fun()
@@ -127,8 +128,9 @@ class PiPER_CON:
             # installation_pos: 設置位置 
             self.piper.MotionCtrl_2(0x01, 0x01, 40, 0x00)
             self.piper.JointCtrl(joint_q[0], joint_q[1], joint_q[2], joint_q[3], joint_q[4], joint_q[5])
-            
-#            self.piper.GripperCtrl(0,1000,0x01, 0)
+            if self.gripper != joint_q[6]:
+                self.piper.GripperCtrl(joint_q[6],200,0x01, 0)
+                self.gripper = joint_q[6]
             
 #            self.piper.JointCtrl(joint_q[0], joint_q[1], joint_q[2], current[3], current[4], current[5])
             #   print(self.piper.GetArmStatus())
